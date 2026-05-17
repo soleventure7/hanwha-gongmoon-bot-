@@ -217,9 +217,66 @@ async def cmd_done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await _mark_done(update, context, chat_id, item_id)
 
 
+async def cmd_assign(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/assign [번호] [이름] — 담당자 지정"""
+    chat_id = update.effective_chat.id
+    if len(context.args) < 2:
+        await update.message.reply_text("사용법: /assign [번호] [이름]\n예: /assign 1 홍길동")
+        return
+
+    item_id = context.args[0]
+    assignee = " ".join(context.args[1:])
+    items = get_items(chat_id)
+
+    if item_id not in items:
+        await update.message.reply_text(f"[{item_id}] 번 아이템을 찾을 수 없습니다.")
+        return
+
+    item = items[item_id]
+    old_assignee = item.get("assignee") or "미지정"
+    item["assignee"] = assignee
+
+    # 카드 메시지 업데이트
+    if item.get("message_id"):
+        try:
+            card_text, keyboard = render_item_card(item_id, item)
+            await context.bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=item["message_id"],
+                text=card_text,
+                reply_markup=keyboard,
+            )
+        except Exception:
+            pass
+
+    await update.message.reply_text(
+        f"[{item_id}] 담당자가 {old_assignee} -> {assignee} 로 변경되었습니다."
+    )
+
+
 async def cmd_list(update: Update, context: ContextTypes.DEFAULT_TYPE):
     chat_id = update.effective_chat.id
     await update.message.reply_text(render_summary(chat_id))
+
+
+async def cmd_status(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """/status — 버퍼 현황 확인"""
+    chat_id = update.effective_chat.id
+    buf = message_buffer.get(chat_id, [])
+    count = len(buf)
+
+    if count == 0:
+        msg = "버퍼에 저장된 메시지가 없습니다.\n대화가 쌓이면 /extract 로 분석할 수 있습니다."
+    else:
+        last = buf[-3:] if count >= 3 else buf
+        preview = "\n".join([f"  {line}" for line in last])
+        msg = (
+            f"버퍼 현황: 최근 메시지 {count}개 저장됨 (최대 {BUFFER_MAX}개)\n\n"
+            f"최근 메시지 미리보기:\n{preview}\n\n"
+            f"/extract 입력 시 위 대화를 분석합니다."
+        )
+
+    await update.message.reply_text(msg)
 
 
 async def cmd_clear(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -237,6 +294,8 @@ async def cmd_help(update: Update, context: ContextTypes.DEFAULT_TYPE):
         "/extract - 최근 대화에서 액션아이템 자동 추출\n"
         "/extract [대화내용] - 직접 붙여넣기 분석\n"
         "/done [번호] - 특정 아이템 완료 처리\n"
+        "/assign [번호] [이름] - 담당자 지정 (예: /assign 1 홍길동)\n"
+        "/status - 버퍼에 쌓인 메시지 현황 확인\n"
         "/list - 전체 현황 요약 보기\n"
         "/clear - 완료된 항목 정리\n"
         "/help - 이 도움말"
@@ -313,6 +372,8 @@ def main():
     app = Application.builder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("extract", cmd_extract))
     app.add_handler(CommandHandler("done", cmd_done))
+    app.add_handler(CommandHandler("assign", cmd_assign))
+    app.add_handler(CommandHandler("status", cmd_status))
     app.add_handler(CommandHandler("list", cmd_list))
     app.add_handler(CommandHandler("clear", cmd_clear))
     app.add_handler(CommandHandler("help", cmd_help))
