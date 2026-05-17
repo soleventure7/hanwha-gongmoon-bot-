@@ -215,7 +215,7 @@ async def cmd_extract(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     await processing_msg.edit_text(
-        f"✨ *{len(items_raw)}개의 액션아이템을 추출했습니다!*\n"
+        f"✨ *{len(items_raw)}개의 액션아이템을 추출했습니다*\n"
         "각 항목을 확인하고 완료 시 ✅ 버튼을 눌러주세요.",
         parse_mode="MarkdownV2"
     )
