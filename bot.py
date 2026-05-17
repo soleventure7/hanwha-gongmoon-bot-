@@ -81,7 +81,7 @@ async def extract_action_items(conversation: str) -> list[dict]:
     """Claude API로 액션아이템 추출"""
     try:
         response = anthropic_client.messages.create(
-            model="claude-sonnet-4-20250514",
+            model="claude-sonnet-4-5",
             max_tokens=1000,
             messages=[{"role": "user", "content": EXTRACT_PROMPT + conversation}],
         )
