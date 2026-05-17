@@ -191,19 +191,20 @@ def render_summary(chat_id: int) -> str:
 async def cmd_extract(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """/extract — 최근 대화 버퍼에서 액션아이템 추출"""
     chat_id = update.effective_chat.id
-    buf = message_buffer.get(chat_id, [])
-
-    if len(buf) < 2:
-        await update.message.reply_text(
-            "⚠️ 분석할 대화 내용이 부족합니다.\n"
-            "대화가 더 쌓인 후 /extract 를 사용해주세요.\n\n"
-            "또는 `/extract` 뒤에 직접 대화 내용을 붙여넣을 수 있습니다."
-        )
-        return
-
-    # 명령어 뒤에 텍스트가 있으면 그걸 우선 사용
+   # 명령어 뒤에 텍스트가 있으면 버퍼 무시하고 바로 사용
     custom_text = " ".join(context.args) if context.args else None
-    conversation = custom_text if custom_text else "\n".join(buf[-50:])  # 최근 50개
+    if custom_text:
+        conversation = custom_text
+    else:
+        buf = message_buffer.get(chat_id, [])
+        if len(buf) < 2:
+            await update.message.reply_text(
+                "⚠️ 분석할 대화 내용이 부족합니다.\n"
+                "대화가 더 쌓인 후 /extract 를 사용해주세요.\n\n"
+                "또는 `/extract` 뒤에 직접 대화 내용을 붙여넣을 수 있습니다."
+            )
+            return
+        conversation = "\n".join(buf[-50:])
 
     processing_msg = await update.message.reply_text("🤖 AI가 대화를 분석중입니다...")
 
