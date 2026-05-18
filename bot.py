@@ -168,7 +168,7 @@ async def cmd_extract(update: Update, context: ContextTypes.DEFAULT_TYPE):
         conversation = custom_text
     else:
         buf = message_buffer.get(chat_id, [])
-        if len(buf) < 2:
+        if len(buf) < 1:
             await update.message.reply_text(
                 "분석할 대화 내용이 부족합니다.\n\n"
                 "/extract 뒤에 직접 대화 내용을 붙여넣을 수 있습니다.\n"
